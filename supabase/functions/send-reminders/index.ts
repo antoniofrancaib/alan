@@ -55,30 +55,30 @@ async function sendReminders() {
       } = user;
 
       // Convert the user's `preferred_time` (assumed to be a time string) to a Date in the given timezone
-      const userGospelSentTimeUTC = new Date(
+      const userPapersSentTimeUTC = new Date(
         new Date(`${todayUTC}T${preferred_time}`).toLocaleString("en-US", {
           timeZone: timezone,
         }),
       );
 
-      // 1. Ensure the user has already received today's Gospel.
-      if (userGospelSentTimeUTC > nowUTC) {
-        console.log("Skipped reminder, gospel not sent");
-        continue; // Skip if the Gospel hasn't been sent yet.
+      // 1. Ensure the user has already received today's papers.
+      if (userPapersSentTimeUTC > nowUTC) {
+        console.log("Skipped reminder, papers not sent yet");
+        continue; // Skip if the papers haven't been sent yet.
       }
 
-      // 2. Ensure at least 8 hours have passed since the Gospel was sent.
-      const eightHoursAfterGospel = new Date(
-        userGospelSentTimeUTC.getTime() + 8 * 60 * 60 * 1000,
+      // 2. Ensure at least 8 hours have passed since the papers were sent.
+      const eightHoursAfterPapers = new Date(
+        userPapersSentTimeUTC.getTime() + 8 * 60 * 60 * 1000,
       );
-      if (nowUTC < eightHoursAfterGospel) {
-        console.log("Skipped reminder, less than 8 hours since gospel sent");
+      if (nowUTC < eightHoursAfterPapers) {
+        console.log("Skipped reminder, less than 8 hours since papers sent");
         continue; // Skip if 8 hours haven't passed.
       }
 
-      // 3. Ensure the user hasn't replied after receiving the Gospel.
+      // 3. Ensure the user hasn't replied after receiving the papers.
       const userLastMessageTime = new Date(last_message_timestamp);
-      if (userLastMessageTime > userGospelSentTimeUTC) {
+      if (userLastMessageTime > userPapersSentTimeUTC) {
         console.log("Skipped reminder, user replied");
         continue; // Skip if the user already replied.
       }
@@ -105,7 +105,7 @@ async function sendReminders() {
     }
 
     const reminderMessage =
-      "¿Te gustaría recibir el Evangelio de mañana? Recuerda que por limitaciones de WhatsApp, solo te puedo mandar mensajes si me has escrito en las últimas 24 horas 🙏";
+      "Hey there! Would you like to receive tomorrow's ML papers? Due to WhatsApp's 24-hour messaging policy, I can only send you updates if you've messaged me within the last 24 hours. 🤖📊";
 
     // Send reminders and update the last_reminder_sent timestamp
     for (const phoneNumber of usersToRemind) {

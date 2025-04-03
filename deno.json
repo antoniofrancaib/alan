@@ -1,6 +1,10 @@
 {
+  "tasks": {
+    "dev": "deno run --allow-all --watch main.ts"
+  },
   "imports": {
-    "@b-fuze/deno-dom": "jsr:@b-fuze/deno-dom@^0.1.49",
-    "@supabase/supabase-js": "jsr:@supabase/supabase-js@^2.47.16"
-  }
+    "@supabase/functions-js/edge-runtime.d.ts": "jsr:@supabase/functions-js/edge-runtime.d.ts",
+    "@b-fuze/deno-dom": "jsr:@b-fuze/deno-dom"
+  },
+  "nodeModulesDir": "auto"
 }

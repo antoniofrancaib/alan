@@ -8,6 +8,7 @@
 // Setup type definitions for built-in Supabase Runtime APIs
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import OpenAI from "npm:openai";
+import { createClient } from "npm:@supabase/supabase-js@2.47.0";
 
 const verifyToken = Deno.env.get("WHATSAPP_WEBHOOK_VERIFY_TOKEN");
 const openaiApiKey = Deno.env.get("OPENAI_API_KEY");
@@ -17,7 +18,13 @@ const openai = new OpenAI({
   apiKey: openaiApiKey,
 });
 
-console.log("🚀 WhatsApp webhook with OpenAI integration started");
+// Initialize Supabase client
+const supabase = createClient(
+  Deno.env.get("SUPABASE_URL")!,
+  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+);
+
+console.log("🚀 Alan's ML Research Assistant started");
 console.log("DEBUG ENV - VERIFY_TOKEN:", verifyToken);
 console.log("DEBUG ENV - PHONE_NUMBER_ID:", Deno.env.get("WHATSAPP_PHONE_NUMBER_ID"));
 console.log("DEBUG ENV - OPENAI API KEY:", openaiApiKey ? "✅ Set" : "❌ Missing");
@@ -92,6 +99,10 @@ Deno.serve(async (req: Request) => {
                   
                   if (phoneNumber && userText) {
                     console.log(`📤 Processing message from ${phoneNumber}: ${userText}`);
+                    
+                    // Update user's last message timestamp
+                    await updateUserLastMessage(phoneNumber);
+                    
                     // Generate response with OpenAI
                     const aiResponse = await generateOpenAIResponse(userText);
                     await sendWhatsAppMessage(phoneNumber, aiResponse);
@@ -115,6 +126,23 @@ Deno.serve(async (req: Request) => {
   }
 });
 
+async function updateUserLastMessage(phoneNumber: string) {
+  try {
+    const { error } = await supabase
+      .from("users")
+      .upsert({
+        phone_number: phoneNumber,
+        last_message_timestamp: new Date().toISOString(),
+      });
+
+    if (error) {
+      console.error("Error updating user's last message:", error);
+    }
+  } catch (err) {
+    console.error("Error in updateUserLastMessage:", err);
+  }
+}
+
 async function generateOpenAIResponse(userMessage: string): Promise<string> {
   try {
     console.log("🧠 Generating OpenAI response for:", userMessage);
@@ -124,16 +152,18 @@ async function generateOpenAIResponse(userMessage: string): Promise<string> {
       messages: [
         {
           role: "system", 
-          content: `You are a helpful, friendly, and concise assistant communicating via WhatsApp. 
-          
+          content: `You are Alan, a friendly and knowledgeable ML research assistant communicating via WhatsApp. You help users understand machine learning papers and concepts.
+
 Guidelines:
-- Keep responses short and to the point (1-3 sentences when possible)
+- Keep responses concise and engaging (1-3 sentences when possible)
 - Be conversational and friendly
+- Use ML-specific emojis when appropriate (🤖, 📊, 🧠, etc.)
+- Format important terms with *asterisks* for emphasis
 - If you don't know something, admit it clearly
-- Format important information with *asterisks* for bold text
-- Use emojis occasionally to add personality 😊
 - Avoid URLs unless specifically requested
-- Never mention that you're an AI or discuss your limitations unprompted`
+- Never mention that you're an AI or discuss your limitations unprompted
+- If the user asks about a specific paper, try to find it in the daily papers database
+- Be enthusiastic about ML research and encourage curiosity`
         },
         { 
           role: "user", 
